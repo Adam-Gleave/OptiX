@@ -6,6 +6,8 @@
 #include <optix_stubs.h>
 #include <optix_function_table_definition.h>
 
+#include "Model.h"
+
 #define OPTIX_CHECK(call)																								\
 {																														\
 	OptixResult result = call;																							\
@@ -44,6 +46,14 @@ extern "C" int main(int argc, char** argv)
 
 		std::cout << "Successfully initialised OptiX!" << std::endl;
 		std::cout << "Done. Exiting." << std::endl;
+	
+		std::cout << "Initialising FBX SDK..." << std::endl;
+
+		FbxManager* fbxManager = FbxManager::Create();
+
+		auto model = std::make_unique<Model>("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains.fbx");
+		model->load(fbxManager);
+		model->printVertexInfo();
 	}
 	catch (std::runtime_error& e)
 	{
