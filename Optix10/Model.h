@@ -12,10 +12,12 @@ public:
 
 	void load(FbxManager* fbxManager);
 	void printVertexInfo() const;
-
 	const std::string& getFilename() const;
 
 private:
+	void loadVertices(FbxMesh* mesh);
+
 	std::string filename;
-	std::vector<FbxMesh*> meshes;
+	std::vector<float*> meshVertices;
+	std::vector<int> meshVertexCounts;
 };

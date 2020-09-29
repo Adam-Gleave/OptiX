@@ -6,7 +6,14 @@
 #include <optix_stubs.h>
 #include <optix_function_table_definition.h>
 
+#include <gl/glew.h>
+#include <gl/GL.h>
+#include <GLFW/glfw3.h>
+
 #include "Model.h"
+
+#pragma comment(lib, "glew32.lib")
+#pragma comment(lib, "opengl32.lib")
 
 #define OPTIX_CHECK(call)																								\
 {																														\
@@ -36,6 +43,50 @@ void initOptix()
 	OPTIX_CHECK(optixInit());
 }
 
+void render()
+{
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	GLFWwindow* window;
+
+	if (!glfwInit())
+	{
+		std::cout << "Failed to initialise GLFW" << std::endl;
+		exit(-1);
+	}
+
+	window = glfwCreateWindow(640, 480, "Renderer", NULL, NULL);
+
+	if (!window)
+	{
+		glfwTerminate();
+		std::cout << "Failed to initialise window" << std::endl;
+		exit(-1);
+	}
+
+	glfwMakeContextCurrent(window);
+	glewExperimental = true;
+
+	if (glewInit() != GLEW_OK)
+	{
+		glfwTerminate();
+		std::cout << "Failed to initialise GLEW" << std::endl;
+		exit(-1);
+	}
+
+	while (!glfwWindowShouldClose(window))
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glfwTerminate();
+}
+
 extern "C" int main(int argc, char** argv)
 {
 	try
@@ -53,7 +104,8 @@ extern "C" int main(int argc, char** argv)
 
 		auto model = std::make_unique<Model>("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains.fbx");
 		model->load(fbxManager);
-		model->printVertexInfo();
+
+		render();
 	}
 	catch (std::runtime_error& e)
 	{

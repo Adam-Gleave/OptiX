@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#define VERTEX_SIZE 3
+
 Model::Model(const std::string& filename) :
 	filename(filename)
 {
@@ -9,6 +11,17 @@ Model::Model(const std::string& filename) :
 
 void Model::load(FbxManager* fbxManager)
 {
+	if (!meshVertices.empty())
+	{
+		for (auto& meshVerticesPtr : meshVertices)
+		{
+			delete meshVerticesPtr;
+		}
+
+		meshVertices.clear();
+		meshVertexCounts.clear();
+	}
+
 	FbxIOSettings* fbxIOSettings = FbxIOSettings::Create(fbxManager, IOSROOT);
 	FbxImporter* fbxImporter = FbxImporter::Create(fbxManager, "");
 
@@ -39,49 +52,45 @@ void Model::load(FbxManager* fbxManager)
 
 					if (attribute && attribute->GetAttributeType() == FbxNodeAttribute::eMesh)
 					{
-						meshes.push_back((FbxMesh*) attribute);
+						loadVertices((FbxMesh*)attribute);
 					}
 				}
 			}
 		}
 	}
 
-	if (!meshes.size())
+	if (meshVertices.empty())
 	{
 		std::cout << "FBX has no associated meshes" << std::endl;
 		exit(-1);
 	}
 }
 
-void Model::printVertexInfo() const
+void Model::loadVertices(FbxMesh* mesh)
 {
-	if (meshes.empty())
-	{
-		std::cout << "Model has not been loaded" << std::endl;
-		return;
-	}
-	
-	for (int i = 0; i < meshes.size(); i++)
-	{
-		FbxMesh* mesh = meshes[i];
-		
-		const int polys = mesh->GetPolygonCount();
-		std::cout << "Mesh " << i << " contains " << polys << " polygons" << std::endl;
-	
-		for (int j = 0; j < polys; j++)
-		{
-			for (int k = 0; k < mesh->GetPolygonSize(j); k++)
-			{
-				const int index = mesh->GetPolygonVertex(j, k);
-				const FbxVector4 vertex = mesh->GetControlPointAt(index);
+	const int vertexCount = mesh->GetControlPointsCount();
+	meshVertexCounts.push_back(vertexCount);
+	meshVertices.push_back(new float[vertexCount * VERTEX_SIZE]());
 
-				std::cout << "Poly " << j << " vertex " << k << ": "
-					<< vertex.mData[0] << ", "
-					<< vertex.mData[1] << ", "
-					<< vertex.mData[2] << ", " << std::endl;
-			}
+	const int polys = mesh->GetPolygonCount();
+
+	for (int polyIndex = 0; polyIndex < polys; polyIndex++)
+	{
+		const int polyVerts = mesh->GetPolygonSize(polyIndex);
+
+		for (int polyVertIndex = 0; polyVertIndex < polyVerts; polyVertIndex++)
+		{
+			const int controlPointIndex = mesh->GetPolygonVertex(polyIndex, polyVertIndex);
+			const FbxVector4 vertex = mesh->GetControlPointAt(controlPointIndex);
+
+			const int offset = polyVertIndex * VERTEX_SIZE;
+			meshVertices.back()[offset+0] = vertex.mData[0];
+			meshVertices.back()[offset+1] = vertex.mData[1];
+			meshVertices.back()[offset+2] = vertex.mData[2];
 		}
 	}
+
+	std::cout << "Loaded mesh with " << vertexCount << " vertices" << std::endl;
 }
 
 const std::string& Model::getFilename() const
