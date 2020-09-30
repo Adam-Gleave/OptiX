@@ -1,26 +1,21 @@
+#include "stdafx.h"
+
 #include "Model.h"
 
-#include <iostream>
+#include "Renderer.h"
 
-#define VERTEX_SIZE 3
+const int VERTEX_SIZE = 3;
 
 Model::Model(const std::string& filename) :
-	filename(filename)
+	filename(filename),
+	vertexCount(0),
+	vertexBuffer(0)
 {
 }
 
-void Model::load(FbxManager* fbxManager)
+void Model::load(FbxManager* fbxManager, Renderer* renderer)
 {
-	if (!meshVertices.empty())
-	{
-		for (auto& meshVerticesPtr : meshVertices)
-		{
-			delete meshVerticesPtr;
-		}
-
-		meshVertices.clear();
-		meshVertexCounts.clear();
-	}
+	vertices.clear();
 
 	FbxIOSettings* fbxIOSettings = FbxIOSettings::Create(fbxManager, IOSROOT);
 	FbxImporter* fbxImporter = FbxImporter::Create(fbxManager, "");
@@ -59,20 +54,24 @@ void Model::load(FbxManager* fbxManager)
 		}
 	}
 
-	if (meshVertices.empty())
+	createVertexBuffer();
+
+	if (!vertexCount)
 	{
 		std::cout << "FBX has no associated meshes" << std::endl;
 		exit(-1);
 	}
+
+	renderer->addModel(std::move(this));
 }
 
 void Model::loadVertices(FbxMesh* mesh)
 {
-	const int vertexCount = mesh->GetControlPointsCount();
-	meshVertexCounts.push_back(vertexCount);
-	meshVertices.push_back(new float[vertexCount * VERTEX_SIZE]());
+	const int meshVertexCount = mesh->GetControlPointsCount();
+	vertexCount += meshVertexCount;
 
 	const int polys = mesh->GetPolygonCount();
+	int offset = 0;
 
 	for (int polyIndex = 0; polyIndex < polys; polyIndex++)
 	{
@@ -83,17 +82,29 @@ void Model::loadVertices(FbxMesh* mesh)
 			const int controlPointIndex = mesh->GetPolygonVertex(polyIndex, polyVertIndex);
 			const FbxVector4 vertex = mesh->GetControlPointAt(controlPointIndex);
 
-			const int offset = polyVertIndex * VERTEX_SIZE;
-			meshVertices.back()[offset+0] = vertex.mData[0];
-			meshVertices.back()[offset+1] = vertex.mData[1];
-			meshVertices.back()[offset+2] = vertex.mData[2];
+			vertices.push_back(static_cast<float>(vertex.mData[0]));
+			vertices.push_back(static_cast<float>(vertex.mData[1]));
+			vertices.push_back(static_cast<float>(vertex.mData[2]));
+			offset += VERTEX_SIZE;
 		}
 	}
 
-	std::cout << "Loaded mesh with " << vertexCount << " vertices" << std::endl;
+	std::cout << "Loaded mesh with " << meshVertexCount << " vertices" << std::endl;
+}
+
+void Model::createVertexBuffer()
+{
+	glGenBuffers(1, &vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, vertexCount * VERTEX_SIZE, vertices.data(), GL_STATIC_DRAW);
 }
 
 const std::string& Model::getFilename() const
 {
 	return filename;
+}
+
+const unsigned int Model::getVertexBuffer() const
+{
+	return vertexBuffer;
 }

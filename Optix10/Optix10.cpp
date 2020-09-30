@@ -1,4 +1,4 @@
-#include <iostream>
+#include "stdafx.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -6,13 +6,10 @@
 #include <optix_stubs.h>
 #include <optix_function_table_definition.h>
 
-#include <gl/glew.h>
-#include <gl/GL.h>
-#include <GLFW/glfw3.h>
-
 #include "Model.h"
+#include "Renderer.h"
 
-#pragma comment(lib, "glew32.lib")
+#pragma comment(lib, "glew32s.lib")
 #pragma comment(lib, "opengl32.lib")
 
 #define OPTIX_CHECK(call)																								\
@@ -43,69 +40,27 @@ void initOptix()
 	OPTIX_CHECK(optixInit());
 }
 
-void render()
-{
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	GLFWwindow* window;
-
-	if (!glfwInit())
-	{
-		std::cout << "Failed to initialise GLFW" << std::endl;
-		exit(-1);
-	}
-
-	window = glfwCreateWindow(640, 480, "Renderer", NULL, NULL);
-
-	if (!window)
-	{
-		glfwTerminate();
-		std::cout << "Failed to initialise window" << std::endl;
-		exit(-1);
-	}
-
-	glfwMakeContextCurrent(window);
-	glewExperimental = true;
-
-	if (glewInit() != GLEW_OK)
-	{
-		glfwTerminate();
-		std::cout << "Failed to initialise GLEW" << std::endl;
-		exit(-1);
-	}
-
-	while (!glfwWindowShouldClose(window))
-	{
-		glClear(GL_COLOR_BUFFER_BIT);
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
-}
-
 extern "C" int main(int argc, char** argv)
 {
 	try
 	{
 		std::cout << "Initialising OptiX 7..." << std::endl;
-
 		initOptix();
-
-		std::cout << "Successfully initialised OptiX!" << std::endl;
-		std::cout << "Done. Exiting." << std::endl;
+		std::cout << "Successfully initialised OptiX!" << std::endl << std::endl;
 	
-		std::cout << "Initialising FBX SDK..." << std::endl;
+		std::cout << "Initialising renderer..." << std::endl;
+		auto renderer = std::make_unique<Renderer>();
 
+		std::cout << "Initialising FBX SDK..." << std::endl;
 		FbxManager* fbxManager = FbxManager::Create();
 
-		auto model = std::make_unique<Model>("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains.fbx");
-		model->load(fbxManager);
+		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains.fbx");
+		model->load(fbxManager, renderer.get());
 
-		render();
+		while (!renderer->shouldClose())
+		{
+			renderer->renderFrame();
+		}
 	}
 	catch (std::runtime_error& e)
 	{
