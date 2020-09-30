@@ -9,7 +9,8 @@ const int VERTEX_SIZE = 3;
 Model::Model(const std::string& filename) :
 	filename(filename),
 	vertexCount(0),
-	vertexBuffer(0)
+	vertexBuffer(0),
+	modelMatrix(1.0f)
 {
 }
 
@@ -95,8 +96,13 @@ void Model::loadVertices(FbxMesh* mesh)
 void Model::createVertexBuffer()
 {
 	glGenBuffers(1, &vertexBuffer);
+	glGenVertexArrays(1, &vertexArray);
+
+	glBindVertexArray(vertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glBufferData(GL_ARRAY_BUFFER, vertexCount * VERTEX_SIZE, vertices.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 }
 
 const std::string& Model::getFilename() const
@@ -104,7 +110,17 @@ const std::string& Model::getFilename() const
 	return filename;
 }
 
-const unsigned int Model::getVertexBuffer() const
+const unsigned int Model::getVertexArray() const
 {
-	return vertexBuffer;
+	return vertexArray;
+}
+
+const unsigned int Model::getVertexCount() const
+{
+	return vertexCount;
+}
+
+const glm::mat4& Model::getModelMatrix() const
+{
+	return modelMatrix;
 }

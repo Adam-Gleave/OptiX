@@ -2,6 +2,8 @@
 
 #include <fbxsdk.h>
 
+#include "../vendor/glm/glm/glm.hpp"
+
 class Renderer;
 
 class Model
@@ -12,7 +14,9 @@ public:
 	void load(FbxManager* fbxManager, Renderer* renderer);
 
 	const std::string& getFilename() const;
-	const unsigned int getVertexBuffer() const;
+	const unsigned int getVertexArray() const;
+	const unsigned int getVertexCount() const;
+	const glm::mat4& getModelMatrix() const;
 
 private:
 	void loadVertices(FbxMesh* mesh);
@@ -20,7 +24,10 @@ private:
 
 	std::string filename;
 	std::vector<float> vertices;
-	int vertexCount;
+	unsigned int vertexCount;
 
 	unsigned int vertexBuffer;
+	unsigned int vertexArray;
+
+	glm::mat4 modelMatrix;
 };

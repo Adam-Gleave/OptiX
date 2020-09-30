@@ -3,8 +3,16 @@
 #include "Renderer.h"
 
 #include "Model.h"
+#include "../vendor/glm/glm/glm.hpp"
+#include "../vendor/glm/glm/gtc/matrix_transform.hpp"
+#include "../vendor/glm/glm/gtc/type_ptr.hpp"
 
-Renderer::Renderer()
+Renderer::Renderer() :
+	deltaT(0.0f),
+	prevT(0.0f),
+	prevX(windowParams.width / 2.0f),
+	prevY(windowParams.height / 2.0f),
+	toClose(false)
 {
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -17,7 +25,7 @@ Renderer::Renderer()
 		exit(-1);
 	}
 
-	window = glfwCreateWindow(640, 480, "Renderer", NULL, NULL);
+	window = glfwCreateWindow(windowParams.width, windowParams.height, "Renderer", NULL, NULL);
 
 	if (!window)
 	{
@@ -42,6 +50,10 @@ Renderer::Renderer()
 	auto fragmentPath = std::string(pathString).append("\\..\\shaders\\basic.frag");
 
 	loadShaders(vertexPath.c_str(), fragmentPath.c_str());
+	initCamera();
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glEnable(GL_DEPTH_TEST);
 }
 
 Renderer::~Renderer()
@@ -57,9 +69,79 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	processKeyInput();
+	processMouseInput();
+
+	for (const auto& model : models)
+	{
+		int viewUniformLoc = glGetUniformLocation(program, "view");
+		glUniformMatrix4fv(viewUniformLoc, 1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
+
+		int modelUniformLoc = glGetUniformLocation(program, "model");
+		glUniformMatrix4fv(modelUniformLoc, 1, GL_FALSE, glm::value_ptr(model->getModelMatrix()));
+
+		glBindVertexArray(model->getVertexArray());
+		glDrawArrays(GL_LINES, 0, model->getVertexCount());
+	}
+
 	glfwSwapBuffers(window);
 	glfwPollEvents();
+}
+
+void Renderer::processKeyInput()
+{
+	const float currT = glfwGetTime();
+	deltaT = currT - prevT;
+	prevT = currT;
+	
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	{
+		toClose = true;
+		return;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		camera.processMovement(CameraMovement::FORWARD, deltaT);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		camera.processMovement(CameraMovement::BACK, deltaT);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		camera.processMovement(CameraMovement::LEFT, deltaT);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		camera.processMovement(CameraMovement::RIGHT, deltaT);
+	}
+}
+
+void Renderer::processMouseInput()
+{
+	double currX;
+	double currY;
+	glfwGetCursorPos(window, &currX, &currY);
+
+	if (currX != prevX)
+	{
+		const float xOffset = currX - prevX;
+		camera.processMovement(CameraMovement::YAW, xOffset);
+		prevX = currX;
+	}
+
+	if (currY != prevY)
+	{
+		const float yOffset = prevY - currY;
+		camera.processMovement(CameraMovement::PITCH, yOffset);
+		prevY = currY;
+	}
 }
 
 void Renderer::addModel(Model* model)
@@ -69,7 +151,7 @@ void Renderer::addModel(Model* model)
 
 bool Renderer::shouldClose() const
 {
-	return glfwWindowShouldClose(window);
+	return glfwWindowShouldClose(window) || toClose;
 }
 
 void Renderer::loadShaders(const char* vert, const char* frag)
@@ -114,7 +196,6 @@ void Renderer::loadShaders(const char* vert, const char* frag)
 		exit(-1);
 	}
 
-	unsigned int program;
 	program = glCreateProgram();
 	glAttachShader(program, vertexShader);
 	glAttachShader(program, fragmentShader);
@@ -158,4 +239,11 @@ const std::string Renderer::loadShaderSource(const char* filename)
 	}
 
 	return source;
+}
+
+void Renderer::initCamera()
+{
+	glm::mat4 projection = camera.getProjectionMatrix(&windowParams);
+	int projUniformLoc = glGetUniformLocation(program, "projection");
+	glUniformMatrix4fv(projUniformLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }

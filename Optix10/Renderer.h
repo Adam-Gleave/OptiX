@@ -2,6 +2,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include "Camera.h"
+
 class Model;
 
 class Renderer
@@ -19,6 +21,22 @@ private:
 	void loadShaders(const char* vert, const char* frag);
 	const std::string loadShaderSource(const char* filename);
 
-	GLFWwindow* window;
+	void initCamera();
+
+	void processKeyInput();
+	void processMouseInput();
+
 	std::vector<Model*> models;
+
+	GLFWwindow* window;
+	WindowParams windowParams;
+	bool toClose;
+
+	Camera camera;
+	float deltaT;
+	float prevT;
+	float prevX;
+	float prevY;
+
+	unsigned int program;
 };
