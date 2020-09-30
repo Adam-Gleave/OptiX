@@ -8,7 +8,6 @@ const int VERTEX_SIZE = 3;
 
 Model::Model(const std::string& filename) :
 	filename(filename),
-	vertexCount(0),
 	vertexBuffer(0),
 	modelMatrix(1.0f)
 {
@@ -30,6 +29,10 @@ void Model::load(FbxManager* fbxManager, Renderer* renderer)
 
 	FbxScene* scene = FbxScene::Create(fbxManager, "scene");
 	fbxImporter->Import(scene);
+
+	FbxGeometryConverter converter(fbxManager);
+	converter.Triangulate(scene, true);
+
 	fbxImporter->Destroy();
 
 	FbxNode* rootNode = scene->GetRootNode();
@@ -57,7 +60,7 @@ void Model::load(FbxManager* fbxManager, Renderer* renderer)
 
 	createVertexBuffer();
 
-	if (!vertexCount)
+	if (!vertices.size())
 	{
 		std::cout << "FBX has no associated meshes" << std::endl;
 		exit(-1);
@@ -68,28 +71,24 @@ void Model::load(FbxManager* fbxManager, Renderer* renderer)
 
 void Model::loadVertices(FbxMesh* mesh)
 {
-	const int meshVertexCount = mesh->GetControlPointsCount();
-	vertexCount += meshVertexCount;
+	FbxVector4* meshVertices = mesh->GetControlPoints();
 
-	const int polys = mesh->GetPolygonCount();
-	int offset = 0;
-
-	for (int polyIndex = 0; polyIndex < polys; polyIndex++)
+	for (int i = 0; i < mesh->GetPolygonCount(); i++)
 	{
-		const int polyVerts = mesh->GetPolygonSize(polyIndex);
+		int vertsPerPoly = mesh->GetPolygonSize(i);
 
-		for (int polyVertIndex = 0; polyVertIndex < polyVerts; polyVertIndex++)
+		for (int j = 0; j < vertsPerPoly; j++)
 		{
-			const int controlPointIndex = mesh->GetPolygonVertex(polyIndex, polyVertIndex);
-			const FbxVector4 vertex = mesh->GetControlPointAt(controlPointIndex);
+			int vertID = mesh->GetPolygonVertex(i, j);
+			FbxVector4 vertex = meshVertices[vertID];
 
 			vertices.push_back(static_cast<float>(vertex.mData[0]));
 			vertices.push_back(static_cast<float>(vertex.mData[1]));
 			vertices.push_back(static_cast<float>(vertex.mData[2]));
-			offset += VERTEX_SIZE;
 		}
 	}
 
+	const int meshVertexCount = mesh->GetControlPointsCount();
 	std::cout << "Loaded mesh with " << meshVertexCount << " vertices" << std::endl;
 }
 
@@ -97,10 +96,10 @@ void Model::createVertexBuffer()
 {
 	glGenBuffers(1, &vertexBuffer);
 	glGenVertexArrays(1, &vertexArray);
-
 	glBindVertexArray(vertexArray);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, vertexCount * VERTEX_SIZE, vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 }
@@ -117,7 +116,7 @@ const unsigned int Model::getVertexArray() const
 
 const unsigned int Model::getVertexCount() const
 {
-	return vertexCount;
+	return vertices.size();
 }
 
 const glm::mat4& Model::getModelMatrix() const

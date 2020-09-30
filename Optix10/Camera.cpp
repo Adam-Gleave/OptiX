@@ -60,13 +60,13 @@ void Camera::processMovement(CameraMovement movement, float factor)
 	{
 		pitch += factor * sensitivity;
 
-		if (pitch > 90.0f)
+		if (pitch > 89.9f)
 		{
-			pitch = 90.0f;
+			pitch = 89.9f;
 		}
-		else if (pitch < -90.0f)
+		else if (pitch < -89.9f)
 		{
-			pitch = -90.0f;
+			pitch = -89.9f;
 		}
 
 		break;

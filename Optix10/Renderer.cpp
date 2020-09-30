@@ -83,7 +83,7 @@ void Renderer::renderFrame()
 		glUniformMatrix4fv(modelUniformLoc, 1, GL_FALSE, glm::value_ptr(model->getModelMatrix()));
 
 		glBindVertexArray(model->getVertexArray());
-		glDrawArrays(GL_LINES, 0, model->getVertexCount());
+		glDrawArrays(GL_TRIANGLES, 0, model->getVertexCount());
 	}
 
 	glfwSwapBuffers(window);

@@ -24,7 +24,6 @@ private:
 
 	std::string filename;
 	std::vector<float> vertices;
-	unsigned int vertexCount;
 
 	unsigned int vertexBuffer;
 	unsigned int vertexArray;
