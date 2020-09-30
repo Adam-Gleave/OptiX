@@ -9,7 +9,8 @@ const int VERTEX_SIZE = 3;
 Model::Model(const std::string& filename) :
 	filename(filename),
 	vertexBuffer(0),
-	modelMatrix(1.0f)
+	modelMatrix(1.0f),
+	color(0.7f, 0.7f, 0.7f)
 {
 }
 
@@ -58,7 +59,7 @@ void Model::load(FbxManager* fbxManager, Renderer* renderer)
 		}
 	}
 
-	createVertexBuffer();
+	scene->Destroy();
 
 	if (!vertices.size())
 	{
@@ -66,6 +67,7 @@ void Model::load(FbxManager* fbxManager, Renderer* renderer)
 		exit(-1);
 	}
 
+	createVertexBuffer();
 	renderer->addModel(std::move(this));
 }
 
@@ -122,4 +124,9 @@ const unsigned int Model::getVertexCount() const
 const glm::mat4& Model::getModelMatrix() const
 {
 	return modelMatrix;
+}
+
+const glm::vec3& Model::getColor() const
+{
+	return color;
 }

@@ -17,6 +17,7 @@ public:
 	const unsigned int getVertexArray() const;
 	const unsigned int getVertexCount() const;
 	const glm::mat4& getModelMatrix() const;
+	const glm::vec3& getColor() const;
 
 private:
 	void loadVertices(FbxMesh* mesh);
@@ -29,4 +30,5 @@ private:
 	unsigned int vertexArray;
 
 	glm::mat4 modelMatrix;
+	glm::vec3 color;
 };

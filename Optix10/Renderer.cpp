@@ -15,8 +15,8 @@ Renderer::Renderer() :
 	toClose(false)
 {
 	glfwWindowHint(GLFW_SAMPLES, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	if (!glfwInit())
@@ -53,6 +53,7 @@ Renderer::Renderer() :
 	initCamera();
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPos(window, windowParams.width / 2.0f, windowParams.height / 2.0f);
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -81,6 +82,9 @@ void Renderer::renderFrame()
 
 		int modelUniformLoc = glGetUniformLocation(program, "model");
 		glUniformMatrix4fv(modelUniformLoc, 1, GL_FALSE, glm::value_ptr(model->getModelMatrix()));
+
+		int objectColorLoc = glGetUniformLocation(program, "objectColor");
+		glUniform3fv(objectColorLoc, 1, glm::value_ptr(model->getColor()));
 
 		glBindVertexArray(model->getVertexArray());
 		glDrawArrays(GL_TRIANGLES, 0, model->getVertexCount());
@@ -246,4 +250,16 @@ void Renderer::initCamera()
 	glm::mat4 projection = camera.getProjectionMatrix(&windowParams);
 	int projUniformLoc = glGetUniformLocation(program, "projection");
 	glUniformMatrix4fv(projUniformLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+	glm::vec3 lightPosition = glm::vec3(128.0f, 128.0f, -128.0f);
+	int lightPositionLoc = glGetUniformLocation(program, "lightPosition");
+	glUniform3fv(lightPositionLoc, 1, glm::value_ptr(lightPosition));
+
+	glm::vec3 lightColor = glm::vec3(0.95f, 0.95f, 0.95f);
+	int lightColorLoc = glGetUniformLocation(program, "lightColor");
+	glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor));
+
+	glm::vec3 ambientColor = glm::vec3(0.2f, 0.2f, 0.2f);
+	int ambientLoc = glGetUniformLocation(program, "ambientColor");
+	glUniform3fv(ambientLoc, 1, glm::value_ptr(ambientColor));
 }

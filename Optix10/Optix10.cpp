@@ -52,10 +52,13 @@ extern "C" int main(int argc, char** argv)
 		auto renderer = std::make_unique<Renderer>();
 
 		std::cout << "Initialising FBX SDK..." << std::endl;
+		
 		FbxManager* fbxManager = FbxManager::Create();
 
 		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains.fbx");
 		model->load(fbxManager, renderer.get());
+		
+		fbxManager->Destroy();
 
 		while (!renderer->shouldClose())
 		{

@@ -15,13 +15,13 @@ WindowParams::WindowParams() :
 Camera::Camera() :
 	near(0.1f),
 	far(1000.0f),
-	fov(60.0f),
-	position(50.0f, 50.0f, 50.0f),
+	fov(45.0f),
+	position(64.0f, 64.0f, 64.0f),
 	up(0.0f, 1.0f, 0.0f),
 	speed(20.0f),
 	sensitivity(0.1f),
-	pitch(0.0f),
-	yaw(-90.0f)
+	pitch(-45.0f),
+	yaw(225.0f)
 {
 	direction = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - position);
 	updateViewMatrix();
@@ -72,6 +72,8 @@ void Camera::processMovement(CameraMovement movement, float factor)
 		break;
 	}
 	}
+
+	std::cout << pitch << ", " << yaw << std::endl;
 
 	updateViewMatrix();
 }
