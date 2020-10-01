@@ -55,7 +55,7 @@ extern "C" int main(int argc, char** argv)
 		
 		FbxManager* fbxManager = FbxManager::Create();
 
-		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains.fbx");
+		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains2.fbx");
 		model->load(fbxManager, renderer.get());
 		
 		fbxManager->Destroy();
