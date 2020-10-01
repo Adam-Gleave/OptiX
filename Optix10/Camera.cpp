@@ -73,8 +73,6 @@ void Camera::processMovement(CameraMovement movement, float factor)
 	}
 	}
 
-	std::cout << pitch << ", " << yaw << std::endl;
-
 	updateViewMatrix();
 }
 
