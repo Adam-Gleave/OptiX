@@ -5,6 +5,7 @@
 #include <optix.h>
 #include <optix_stubs.h>
 #include <optix_function_table_definition.h>
+#include <nvrtc.h>
 
 #include "macros.h"
 #include "Model.h"
@@ -36,6 +37,71 @@ OptixDeviceContext initOptix()
 	return optixContext;
 }
 
+bool readFileToString(std::string& sourceString, const std::string& filename)
+{
+	std::ifstream file(filename.c_str());
+
+	if (file.good())
+	{
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		sourceString = buffer.str();
+
+		return true;
+	}
+
+	return false;
+}
+
+OptixModule createOptixModule(OptixDeviceContext context)
+{
+	OptixModuleCompileOptions moduleCompileOptions = {};
+	moduleCompileOptions.maxRegisterCount = OPTIX_COMPILE_DEFAULT_MAX_REGISTER_COUNT;
+	moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
+	moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
+
+	OptixPipelineCompileOptions pipelineCompileOptions = {};
+	pipelineCompileOptions.usesMotionBlur = false;
+	pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
+	pipelineCompileOptions.numPayloadValues = 1;
+	pipelineCompileOptions.numAttributeValues = 2;
+#ifdef DEBUG
+	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_DEBUG;
+#else
+	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
+#endif
+	pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
+	pipelineCompileOptions.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE;
+
+	char log[2048];
+
+	OptixModule module = nullptr;
+	size_t logSize = sizeof(log);
+
+	std::string filename = "C:\\Users\\agleave\\Documents\\OptiX\\build\\raycaster.ptx";
+	std::string ptxString;
+	bool readSuccess = readFileToString(ptxString, filename);
+
+	if (!readSuccess)
+	{
+		std::cerr << "Could not read PTX string from file " << filename << std::endl;
+		exit(4);
+	}
+
+	OPTIX_CHECK_LOG(optixModuleCreateFromPTX(
+		context,
+		&moduleCompileOptions,
+		&pipelineCompileOptions,
+		ptxString.c_str(),
+		ptxString.size(),
+		log,
+		&logSize,
+		&module
+	));
+
+	return module;
+}
+
 extern "C" int main(int argc, char** argv)
 {
 	try
@@ -53,7 +119,9 @@ extern "C" int main(int argc, char** argv)
 
 		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountain1.fbx");
 		model->load(fbxManager, renderer.get());
+
 		OptixTraversableHandle accelStructure = model->buildAccelStructure(optixContext);
+		OptixModule optixModule = createOptixModule(optixContext);
 
 		fbxManager->Destroy();
 

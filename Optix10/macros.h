@@ -15,6 +15,23 @@
 	}																													\
 }
 
+#define OPTIX_CHECK_LOG(call)                                                     \
+{                                                                                 \
+        OptixResult res = call;                                                   \
+        const size_t logSizeReturned = logSize;                                   \
+        logSize = sizeof(log);                                                    \
+                                                                                  \
+        if(res != OPTIX_SUCCESS)                                                  \
+        {                                                                         \
+            std::cerr << "Optix call '" << #call << "' failed: " __FILE__ ":"     \
+                      << __LINE__ << ")\nLog:\n" << log                           \
+                      << (logSizeReturned > sizeof(log) ? "<TRUNCATED>" : "")     \
+                      << std::endl;                                               \
+                                                                                  \
+            exit(2);                                                              \
+        }                                                                         \
+}
+
 #define CUDA_CHECK(call)                                                    \
 {                                                                           \
     cudaError_t error = call;                                               \
