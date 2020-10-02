@@ -1,7 +1,11 @@
 #include "stdafx.h"
-
 #include "Model.h"
 
+#include <optix.h>
+#include <optix_stubs.h>
+#include <optix_host.h>
+
+#include "macros.h"
 #include "Renderer.h"
 
 const int VERTEX_SIZE = 3;
@@ -104,6 +108,60 @@ void Model::createVertexBuffer()
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+}
+
+OptixTraversableHandle Model::buildAccelStructure(const OptixDeviceContext& context)
+{
+	OptixTraversableHandle accelStructureHandle;
+
+	OptixAccelBuildOptions accelOptions = {};
+	accelOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;
+	accelOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+	const size_t verticesSize = vertices.size() * sizeof(float);
+
+	CUdeviceptr deviceVertexBuffer = 0;
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&deviceVertexBuffer), verticesSize));
+	CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(deviceVertexBuffer), vertices.data(), verticesSize, cudaMemcpyHostToDevice));
+
+	OptixBuildInput triangleInput = {};
+	const uint32_t triangleInputFlags[1] = { OPTIX_GEOMETRY_FLAG_NONE };
+	triangleInput.triangleArray.flags = triangleInputFlags;
+	triangleInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+	triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+	triangleInput.triangleArray.numVertices = static_cast<uint32_t>(vertices.size() / 3);
+	triangleInput.triangleArray.vertexBuffers = &deviceVertexBuffer;
+	triangleInput.triangleArray.numSbtRecords = 1;
+
+	OptixAccelBufferSizes bufferSizes;
+
+	OPTIX_CHECK(optixAccelComputeMemoryUsage(context, &accelOptions, &triangleInput, 1, &bufferSizes));
+	
+	CUdeviceptr tempBuffer = 0;
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&tempBuffer), bufferSizes.tempSizeInBytes));
+
+	CUdeviceptr outputBuffer = 0;
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&outputBuffer), bufferSizes.outputSizeInBytes));
+
+	OPTIX_CHECK(optixAccelBuild(
+		context,
+		0,
+		&accelOptions,
+		&triangleInput,
+		1,
+		tempBuffer,
+		bufferSizes.tempSizeInBytes,
+		outputBuffer,
+		bufferSizes.outputSizeInBytes,
+		&accelStructureHandle,
+		nullptr,
+		0
+	));
+
+	CUDA_CHECK(cudaFree(reinterpret_cast<void*>(tempBuffer)));
+	CUDA_CHECK(cudaFree(reinterpret_cast<void*>(deviceVertexBuffer)));
+
+	return accelStructureHandle;
 }
 
 const std::string& Model::getFilename() const

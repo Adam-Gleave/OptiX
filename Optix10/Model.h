@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fbxsdk.h>
+#include <optix_types.h>
 
 #include "../vendor/glm/glm/glm.hpp"
 
@@ -12,6 +13,7 @@ public:
 	Model(const std::string& filename);
 
 	void load(FbxManager* fbxManager, Renderer* renderer);
+	OptixTraversableHandle buildAccelStructure(const OptixDeviceContext& context);
 
 	const std::string& getFilename() const;
 	const unsigned int getVertexArray() const;

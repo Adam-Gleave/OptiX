@@ -6,38 +6,34 @@
 #include <optix_stubs.h>
 #include <optix_function_table_definition.h>
 
+#include "macros.h"
 #include "Model.h"
 #include "Renderer.h"
 
 #pragma comment(lib, "glew32s.lib")
 #pragma comment(lib, "opengl32.lib")
 
-#define OPTIX_CHECK(call)																								\
-{																														\
-	OptixResult result = call;																							\
-																														\
-	if (result != OPTIX_SUCCESS)																						\
-	{																													\
-		std::cerr << "OptiX call " << #call << " failed with code " << result << " at line " << __LINE__ << std::endl;	\
-		exit(2);																										\
-	}																													\
-}																														\
-
-void initOptix()
+static void optixLogCallback(unsigned int level, const char* tag, const char* msg, void*)
 {
-	cudaFree(0);
+	std::cout << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << msg << std::endl;
+}
 
-	int numDevices;
-	cudaGetDeviceCount(&numDevices);
-
-	if (numDevices == 0)
-	{
-		throw std::runtime_error("No CUDA capable devices found!");
-	}
-
-	std::cout << "Found: " << numDevices << " CUDA devices." << std::endl;
+OptixDeviceContext initOptix()
+{
+	CUDA_CHECK(cudaFree(nullptr));
+	CUcontext cudaCtx = nullptr;
 
 	OPTIX_CHECK(optixInit());
+	
+	OptixDeviceContext optixContext = nullptr;
+
+	OptixDeviceContextOptions options = {};
+	options.logCallbackFunction = &optixLogCallback;
+	options.logCallbackLevel = 4;
+
+	OPTIX_CHECK(optixDeviceContextCreate(cudaCtx, &options, &optixContext));
+
+	return optixContext;
 }
 
 extern "C" int main(int argc, char** argv)
@@ -45,7 +41,7 @@ extern "C" int main(int argc, char** argv)
 	try
 	{
 		std::cout << "Initialising OptiX 7..." << std::endl;
-		initOptix();
+		OptixDeviceContext optixContext = initOptix();
 		std::cout << "Successfully initialised OptiX!" << std::endl << std::endl;
 	
 		std::cout << "Initialising renderer..." << std::endl;
@@ -55,9 +51,10 @@ extern "C" int main(int argc, char** argv)
 		
 		FbxManager* fbxManager = FbxManager::Create();
 
-		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountains2.fbx");
+		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountain1.fbx");
 		model->load(fbxManager, renderer.get());
-		
+		OptixTraversableHandle accelStructure = model->buildAccelStructure(optixContext);
+
 		fbxManager->Destroy();
 
 		while (!renderer->shouldClose())
