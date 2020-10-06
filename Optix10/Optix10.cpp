@@ -18,7 +18,7 @@
 #pragma comment(lib, "opengl32.lib")
 
 const float3 origin = { 0.0f, 0.0f, 32.0f };
-const int numCasts = 1000;
+constexpr int numCasts = 360 * 180;
 
 template<typename T>
 struct SbtRecord
@@ -86,11 +86,11 @@ OptixPipelineCompileOptions createOptixPipelineCompileOptions()
 	pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
 	pipelineCompileOptions.numPayloadValues = 1;
 	pipelineCompileOptions.numAttributeValues = 2;
-#ifdef DEBUG
+//#ifdef DEBUG
 	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_DEBUG;
-#else
-	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
-#endif
+//#else
+//	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
+//#endif
 	pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
 	pipelineCompileOptions.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE;
 
@@ -202,21 +202,23 @@ OptixPipeline createOptixPipeline(const OptixDeviceContext& context, const Optix
 
 	OptixPipelineLinkOptions pipelineLinkOptions = {};
 	pipelineLinkOptions.maxTraceDepth = 1;
-#ifdef DEBUG
+//#ifdef DEBUG
 	pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
-#else
-	pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
-#endif
+//#else
+//	pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
+//#endif
 
 	char log[2048];
 	size_t logSize = sizeof(log);
+
+	std::cout << "Program groups size: " << programGroups.size() << std::endl;
 
 	OPTIX_CHECK_LOG(optixPipelineCreate(
 		context,
 		&pipelineCompileOptions,
 		&pipelineLinkOptions,
 		programGroups.data(),
-		programGroups.size() / sizeof(programGroups[0]),
+		programGroups.size(),
 		log,
 		&logSize,
 		&pipeline
@@ -320,10 +322,15 @@ extern "C" int main(int argc, char** argv)
 			CUstream stream;
 			CUDA_CHECK(cudaStreamCreate(&stream));
 
+			uint1* deviceOutput = nullptr;
+			CUDA_CHECK(cudaSetDevice(0));
+			CUDA_CHECK(cudaFree(reinterpret_cast<void*>(deviceOutput)));
+			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&deviceOutput), numCasts * sizeof(uint1)));
+
 			ProgramParams params;
 			params.handle = accelStructure;
 			params.origin = origin;
-			// TODO: results buffer
+			params.results = deviceOutput;
 
 			CUdeviceptr deviceParams;
 			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&deviceParams), sizeof(ProgramParams)));
@@ -331,7 +338,24 @@ extern "C" int main(int argc, char** argv)
 
 			OPTIX_CHECK(optixLaunch(optixPipeline, stream, deviceParams, sizeof(ProgramParams), &sbt, numCasts, 1, 1));
 
+			std::vector<uint1> hostOutput;
+			hostOutput.resize(numCasts);
+			CUDA_CHECK(cudaMemcpy(
+				static_cast<void*>(hostOutput.data()), 
+				deviceOutput, 
+				numCasts * sizeof(uint1), 
+				cudaMemcpyDeviceToHost
+			));
+
 			CUDA_SYNC_CHECK();
+			CUDA_CHECK(cudaStreamSynchronize(stream));
+		
+			std::cout << std::endl;
+			for (const auto& value : hostOutput)
+			{
+				std::cout << value.x << ", ";
+			}
+			std::cout << std::endl;
 		}
 
 		CUDA_CHECK(cudaFree(reinterpret_cast<void*>(sbt.raygenRecord)));

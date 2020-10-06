@@ -8,8 +8,6 @@
 #include "macros.h"
 #include "Renderer.h"
 
-const int VERTEX_SIZE = 3;
-
 Model::Model(const std::string& filename) :
 	filename(filename),
 	vertexBuffer(0),
@@ -118,18 +116,29 @@ OptixTraversableHandle Model::buildAccelStructure(const OptixDeviceContext& cont
 	accelOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;
 	accelOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
-	const size_t verticesSize = vertices.size() * sizeof(float);
+	std::vector<float3> deviceVertices;
+	for (size_t i = 0; i < vertices.size(); i += 3)
+	{
+		deviceVertices.push_back({ vertices[i], vertices[i+1], vertices[i+2] });
+	}
+
+	const size_t verticesSize = sizeof(float3) * deviceVertices.size();
 
 	CUdeviceptr deviceVertexBuffer = 0;
 	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&deviceVertexBuffer), verticesSize));
-	CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(deviceVertexBuffer), vertices.data(), verticesSize, cudaMemcpyHostToDevice));
+	CUDA_CHECK(cudaMemcpy(
+		reinterpret_cast<void*>(deviceVertexBuffer),
+		deviceVertices.data(),
+		verticesSize,
+		cudaMemcpyHostToDevice
+	));
 
-	OptixBuildInput triangleInput = {};
 	const uint32_t triangleInputFlags[1] = { OPTIX_GEOMETRY_FLAG_NONE };
-	triangleInput.triangleArray.flags = triangleInputFlags;
+	OptixBuildInput triangleInput = {};
 	triangleInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+	triangleInput.triangleArray.flags = triangleInputFlags;
 	triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-	triangleInput.triangleArray.numVertices = static_cast<uint32_t>(vertices.size() / 3);
+	triangleInput.triangleArray.numVertices = static_cast<uint32_t>(deviceVertices.size());
 	triangleInput.triangleArray.vertexBuffers = &deviceVertexBuffer;
 	triangleInput.triangleArray.numSbtRecords = 1;
 

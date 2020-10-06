@@ -3,9 +3,9 @@
 #include "Renderer.h"
 
 #include "Model.h"
-#include "../vendor/glm/glm/glm.hpp"
-#include "../vendor/glm/glm/gtc/matrix_transform.hpp"
-#include "../vendor/glm/glm/gtc/type_ptr.hpp"
+#include "../thirdparty/glm/glm/glm.hpp"
+#include "../thirdparty/glm/glm/gtc/matrix_transform.hpp"
+#include "../thirdparty/glm/glm/gtc/type_ptr.hpp"
 
 Renderer::Renderer() :
 	deltaT(0.0f),

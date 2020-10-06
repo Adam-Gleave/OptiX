@@ -3,7 +3,7 @@
 #include <fbxsdk.h>
 #include <optix_types.h>
 
-#include "../vendor/glm/glm/glm.hpp"
+#include "../thirdparty/glm/glm/glm.hpp"
 
 class Renderer;
 

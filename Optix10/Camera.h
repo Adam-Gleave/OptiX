@@ -3,7 +3,7 @@
 #undef near
 #undef far
 
-#include "../vendor/glm/glm/glm.hpp"
+#include "../thirdparty/glm/glm/glm.hpp"
 
 enum class CameraMovement
 {

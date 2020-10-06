@@ -1,7 +1,7 @@
 struct ProgramParams
 {
 	OptixTraversableHandle handle;
-	bool* results;
+	uint1* results;
 	float3 origin;
 };
 
