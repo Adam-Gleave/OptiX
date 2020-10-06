@@ -11,29 +11,41 @@
 .address_size 64
 
 	// .globl	__raygen__rg
-.const .align 8 .b8 params[24];
+.const .align 8 .b8 params[32];
 
 .visible .entry __raygen__rg(
 
 )
 {
+	.reg .pred 	%p<2>;
+	.reg .b16 	%rs<2>;
 	.reg .f32 	%f<15>;
-	.reg .b32 	%r<8>;
-	.reg .b64 	%rd<2>;
+	.reg .b32 	%r<11>;
+	.reg .b64 	%rd<6>;
 
 
-	ld.const.v2.f32 	{%f10, %f11}, [params+8];
-	mov.u32 	%r6, 0;
-	mov.u32 	%r5, 1;
-	ld.const.f32 	%f3, [params+16];
+	// inline asm
+	call (%r1), _optix_get_launch_index_x, ();
+	// inline asm
+	ld.const.v2.f32 	{%f10, %f11}, [params+16];
+	mov.u32 	%r9, 0;
+	mov.u32 	%r8, 1;
+	ld.const.f32 	%f3, [params+24];
 	ld.const.u64 	%rd1, [params];
-	mov.u32 	%r2, 255;
-	mov.u32 	%r3, 4;
+	mov.u32 	%r5, 255;
+	mov.u32 	%r6, 4;
 	mov.f32 	%f8, 0f447A0000;
 	mov.f32 	%f9, 0f00000000;
 	// inline asm
-	call (%r1), _optix_trace_1, (%rd1, %f10, %f11, %f3, %f12, %f13, %f14, %f9, %f8, %f9, %r2, %r3, %r6, %r5, %r6, %r7);
+	call (%r4), _optix_trace_1, (%rd1, %f10, %f11, %f3, %f12, %f13, %f14, %f9, %f8, %f9, %r5, %r6, %r9, %r8, %r9, %r10);
 	// inline asm
+	setp.ne.s32	%p1, %r4, 0;
+	selp.u16	%rs1, 1, 0, %p1;
+	ld.const.u64 	%rd2, [params+8];
+	cvta.to.global.u64 	%rd3, %rd2;
+	cvt.u64.u32	%rd4, %r1;
+	add.s64 	%rd5, %rd3, %rd4;
+	st.global.u8 	[%rd5], %rs1;
 	ret;
 }
 

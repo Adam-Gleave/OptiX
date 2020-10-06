@@ -1,14 +1,15 @@
 #include <optix.h>
 
-#include "raycaster.cuh"
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 
-#define HIT 1
-#define MISS 0
+#include "raycaster.h"
 
-extern "C"
+enum Result
 {
-	__constant__ ProgramParams params;
-}
+	Miss = 0,
+	Hit
+};
 
 static __forceinline__ __device__ void computeRay(uint3 idx, float3& direction)
 {
@@ -40,14 +41,16 @@ extern "C" __global__ void __raygen__rg()
 		0,
 		p0
 	);
+
+	params.results[idx.x] = static_cast<bool>(p0);
 }
 
 extern "C" __global__ void __closesthit__ch()
 {
-	optixSetPayload_0(HIT);
+	optixSetPayload_0(Result::Hit);
 }
 
 extern "C" __global__ void __miss__ms()
 {
-	optixSetPayload_0(MISS);
+	optixSetPayload_0(Result::Miss);
 }

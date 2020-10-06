@@ -41,6 +41,21 @@
         std::cerr << "CUDA call (" << #call << ") failed with error: '"     \
                   << cudaGetErrorString(error)                              \
                   << "' (" __FILE__ << ":" << __LINE__ << ")" << std::endl; \
+                                                                            \
         exit(3);                                                            \
     }                                                                       \
+}
+
+#define CUDA_SYNC_CHECK()                                           \
+{                                                                   \
+    cudaDeviceSynchronize();                                        \
+    cudaError_t error = cudaGetLastError();                         \
+                                                                    \
+    if (error != cudaSuccess)                                       \
+    {                                                               \
+        std::cerr << "CUDA error on synchronize with error '"       \
+                    << cudaGetErrorString(error)                    \
+                    << "' (" __FILE__ << ":" << __LINE__ << ")\n";  \
+        exit(4);                                                    \
+    }                                                               \
 }

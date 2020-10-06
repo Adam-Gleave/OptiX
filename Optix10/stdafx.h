@@ -4,6 +4,7 @@
 #include <gl/glew.h>
 #include <gl/GL.h>
 
+#include <array>
 #include <iostream>
 #include <filesystem>
 #include <fstream>

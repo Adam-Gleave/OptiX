@@ -44,7 +44,7 @@
     <ClInclude Include="macros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="raycaster.cuh">
+    <ClInclude Include="raycaster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
