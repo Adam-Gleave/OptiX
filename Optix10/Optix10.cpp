@@ -306,9 +306,8 @@ extern "C" int main(int argc, char** argv)
 		std::cout << "Initialising FBX SDK..." << std::endl;
 		
 		FbxManager* fbxManager = FbxManager::Create();
-		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\mountain1.fbx");
+		Model* model = new Model("C:\\Users\\agleave\\Documents\\OptiX\\data\\GIS_flat.fbx");
 		model->load(fbxManager, renderer.get());
-		fbxManager->Destroy();
 
 		OptixTraversableHandle accelStructure = model->buildAccelStructure(optixContext);
 		OptixPipelineCompileOptions optixPipelineCompileOptions = createOptixPipelineCompileOptions();
@@ -338,6 +337,11 @@ extern "C" int main(int argc, char** argv)
 
 			OPTIX_CHECK(optixLaunch(optixPipeline, stream, deviceParams, sizeof(ProgramParams), &sbt, numCasts, 1, 1));
 
+			CUDA_SYNC_CHECK();
+			CUDA_CHECK(cudaStreamSynchronize(stream));
+
+			std::cout << "Optix returned" << std::endl;
+
 			std::vector<uint1> hostOutput;
 			hostOutput.resize(numCasts);
 			CUDA_CHECK(cudaMemcpy(
@@ -346,9 +350,6 @@ extern "C" int main(int argc, char** argv)
 				numCasts * sizeof(uint1), 
 				cudaMemcpyDeviceToHost
 			));
-
-			CUDA_SYNC_CHECK();
-			CUDA_CHECK(cudaStreamSynchronize(stream));
 		
 			std::cout << std::endl;
 			for (const auto& value : hostOutput)
@@ -366,6 +367,8 @@ extern "C" int main(int argc, char** argv)
 		{
 			renderer->renderFrame();
 		}
+
+		fbxManager->Destroy();
 	}
 	catch (std::runtime_error& e)
 	{

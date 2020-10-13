@@ -33,7 +33,7 @@ public:
 	void updateViewMatrix();
 
 	const glm::mat4& getViewMatrix() const;
-	const glm::mat4& getProjectionMatrix(WindowParams* windowParams) const;
+	const glm::mat4 getProjectionMatrix(WindowParams* windowParams) const;
 
 private:
 	float near;

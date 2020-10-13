@@ -1,8 +1,8 @@
 #pragma once
 
 #define GLEW_STATIC
-#include <gl/glew.h>
-#include <gl/GL.h>
+#include <GL/glew.h>
+#include <GL/GL.h>
 
 #include <array>
 #include <iostream>

@@ -14,8 +14,8 @@ Renderer::Renderer() :
 	prevY(windowParams.height / 2.0f),
 	toClose(false)
 {
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_SAMPLES, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -44,10 +44,8 @@ Renderer::Renderer() :
 		exit(-1);
 	}
 
-	auto pathString = std::filesystem::current_path().string();
-
-	auto vertexPath = std::string(pathString).append("\\..\\shaders\\basic.vert");
-	auto fragmentPath = std::string(pathString).append("\\..\\shaders\\basic.frag");
+	std::string vertexPath = "C:\\Users\\agleave\\Documents\\OptiX\\shaders\\basic.vert";
+	std::string fragmentPath = "C:\\Users\\agleave\\Documents\\OptiX\\shaders\\basic.frag";
 
 	loadShaders(vertexPath.c_str(), fragmentPath.c_str());
 	initCamera();
@@ -192,6 +190,8 @@ void Renderer::loadShaders(const char* vert, const char* frag)
 
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 
+	std::cout << vertexSource << std::endl;
+
 	if (!success)
 	{
 		glGetShaderInfoLog(fragmentShader, logSize, NULL, log);
@@ -214,6 +214,8 @@ void Renderer::loadShaders(const char* vert, const char* frag)
 		std::cout << log << std::endl;
 		exit(-1);
 	}
+
+	std::cout << fragmentSource << std::endl;
 
 	glUseProgram(program);
 	glDeleteShader(vertexShader);

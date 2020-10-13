@@ -41,20 +41,20 @@ extern "C" __global__ void __raygen__rg()
 
 		OptixTraversableHandle handle = params.handle;
 
-		optixTrace(
-			params.handle,
-			rayOrigin,
-			rayDirection,
-			0.0f,
-			1000.0f,
-			0.0f,
-			OptixVisibilityMask(255),
-			OPTIX_RAY_FLAG_NONE,
-			0,
-			1,
-			0,
-			p0
-		);
+		//optixTrace(
+		//	params.handle,
+		//	rayOrigin,
+		//	rayDirection,
+		//	0.0f,
+		//	1000.0f,
+		//	0.0f,
+		//	OptixVisibilityMask(255),
+		//	OPTIX_RAY_FLAG_NONE,
+		//	0,
+		//	1,
+		//	0,
+		//	p0
+		//);
 
 		params.results[idx.x].x = p0;
 	}

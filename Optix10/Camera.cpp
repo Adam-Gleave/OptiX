@@ -15,7 +15,7 @@ WindowParams::WindowParams() :
 Camera::Camera() :
 	near(0.1f),
 	far(1000.0f),
-	fov(45.0f),
+	fov(60.0f),
 	position(64.0f, 64.0f, 64.0f),
 	up(0.0f, 1.0f, 0.0f),
 	speed(20.0f),
@@ -73,6 +73,8 @@ void Camera::processMovement(CameraMovement movement, float factor)
 	}
 	}
 
+	std::cout << position.x << position.y << position.z << std::endl;
+
 	updateViewMatrix();
 }
 
@@ -90,7 +92,7 @@ const glm::mat4& Camera::getViewMatrix() const
 	return viewMatrix;
 }
 
-const glm::mat4& Camera::getProjectionMatrix(WindowParams* windowParams) const
+const glm::mat4 Camera::getProjectionMatrix(WindowParams* windowParams) const
 {
 	return glm::perspective(
 		glm::radians(fov),
